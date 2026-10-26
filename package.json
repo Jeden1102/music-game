@@ -29,6 +29,9 @@
     "qrcode.vue": "^3.11.0",
     "tailwindcss": "^4.3.3"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@nuxt/eslint": "^1.17.0",
     "@types/node": "^26.6.5",
