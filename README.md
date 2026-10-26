@@ -166,6 +166,21 @@ Jeśli w panelu hostingu MySQL odrzuca połączenie, sprawdź zdalny dostęp (wh
 
 SQLite pozostaje dostępny jako fallback offline: zmień `provider` na `"sqlite"`, ustaw `DATABASE_URL="file:./dev.db"` i wykonaj `pnpm db:push && pnpm db:seed`. Względna ścieżka SQLite jest rozwiązywana względem katalogu `prisma/`, a w `lib/prisma.ts` normalizowana do ścieżki absolutnej.
 
+### Wdrożenie na Vercel
+
+1. W **Project Settings → Environment Variables** ustaw `DATABASE_URL`, `ADMIN_SECRET` i opcjonalnie `NUXT_YOUTUBE_API_KEY`.
+2. Jednorazowo po każdej zmianie schematu zsynchronizuj bazę, używając produkcyjnego adresu:
+
+   ```bash
+   DATABASE_URL="mysql://..." pnpm db:push
+   ```
+
+   Nie trzeba czyścić bazy. `db push` dodaje brakujące tabele (`Room`, `RoomPlayer`, `RoomRound`, …) i nie usuwa zaimportowanych utworów.
+3. Build automatycznie wykonuje `prisma generate` (`hooks['build:before']` w `nuxt.config.ts`). Dzięki temu Vercel nie użyje starego, zcache’owanego klienta Prisma po zmianie schematu.
+4. Jeśli poprzedni deploy kończył się błędem `Cannot read properties of undefined (reading 'deleteMany')` przy `POST /api/rooms`, oznaczało to właśnie stary Prisma Client bez modelu `Room`, a nie brak danych. Po wdrożeniu tej wersji wykonaj **Redeploy** (opcjonalnie z wyczyszczeniem cache).
+
+WebSocket jest obsługiwany przez Vercel Functions, ale pojedyncze połączenie jest przypięte do jednej instancji funkcji. Aby zmiany z akcji HTTP obsłużonej przez inną instancję również docierały do graczy, każda instancja nasłuchująca pokoju sprawdza jego `revision` w bazie raz na sekundę. Broadcast w obrębie tej samej instancji jest natychmiastowy, a między instancjami stan dogania się w maksymalnie ~1 s. Przy bardzo dużym ruchu warto zamiast tego podłączyć współdzielony pub/sub (np. Redis, Pusher lub Ably).
+
 ## Struktura projektu
 
 ```text

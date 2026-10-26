@@ -2,6 +2,7 @@ import { isValidRoomCode, normalizeRoomCode } from '#shared/utils/room'
 import { getRoom } from '../utils/room-store'
 import type { RoomSocketPeer } from '../utils/room-socket'
 import {
+  noteRoomRevision,
   registerRoomSocket,
   unregisterRoomSocket
 } from '../utils/room-socket'
@@ -27,7 +28,7 @@ export default defineWebSocketHandler({
 
     socketPeer.context.roomCode = code
     socketPeer.context.playerId = playerId
-    registerRoomSocket(code, socketPeer)
+    registerRoomSocket(code, socketPeer, room.revision)
     peer.send(JSON.stringify({ type: 'room', room }))
   },
 
@@ -59,6 +60,7 @@ export default defineWebSocketHandler({
       return
     }
 
+    noteRoomRevision(roomCode, room.revision)
     peer.send(JSON.stringify({ type: 'room', room }))
   },
 

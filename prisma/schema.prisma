@@ -1,7 +1,9 @@
 // MySQL by default. For an offline demo switch to SQLite
 // (provider = "sqlite" and DATABASE_URL="file:./dev.db").
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Vercel builds on Amazon Linux (OpenSSL 3); keep native for local builds.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

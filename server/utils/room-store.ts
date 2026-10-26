@@ -725,6 +725,29 @@ export async function getRoomViews(
   return room ? viewerIds.map(viewerId => toPublicRoom(room, viewerId)) : []
 }
 
+/**
+ * Cheap probe used by the socket layer to notice writes made by another server
+ * instance. It avoids loading players, rounds and timelines on every tick.
+ */
+export async function getRoomRevision(code: string): Promise<number | null> {
+  const normalizedCode = normalizeRoomCode(code)
+
+  if (!isValidRoomCode(normalizedCode)) {
+    return null
+  }
+
+  const room = await prisma.room.findUnique({
+    where: { code: normalizedCode },
+    select: { revision: true, expiresAt: true }
+  })
+
+  if (!room || room.expiresAt.getTime() <= Date.now()) {
+    return null
+  }
+
+  return room.revision
+}
+
 export async function getUsedSongIdsForHost(
   code: string,
   hostId: string

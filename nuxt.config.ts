@@ -1,3 +1,5 @@
+import { execSync } from 'node:child_process'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
@@ -61,6 +63,16 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: ['jsqr', 'qrcode.vue']
+    }
+  },
+
+  hooks: {
+    // Vercel can restore a cached node_modules directory together with a Prisma
+    // Client generated from an older schema. Always regenerate it before the
+    // server bundle is created, otherwise new models (Room, RoomRound, ...)
+    // are missing at runtime even though prisma/schema.prisma is up to date.
+    'build:before': () => {
+      execSync('pnpm exec prisma generate', { stdio: 'inherit' })
     }
   },
 
