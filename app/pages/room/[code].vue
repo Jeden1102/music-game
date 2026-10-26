@@ -214,7 +214,6 @@ const timelineOpen = ref(false)
 const isStarting = ref(false)
 const isDrawing = ref(false)
 const isActing = ref(false)
-const isSyncing = ref(false)
 const leaveOpen = ref(false)
 const isLeaving = ref(false)
 const isRecoveringPlayback = ref(false)
@@ -364,6 +363,25 @@ const {
   clipSeconds,
   onClipComplete: finishActiveClip,
   onPlaybackUnavailable: recoverUnplayableSong
+})
+
+const { isConnected: isRoomSocketConnected } = useRoomSocket({
+  code: roomCode,
+  playerId: viewerId,
+  onRoom: (updatedRoom) => {
+    room.value = updatedRoom
+  }
+})
+
+watch(room, (nextRoom, previousRoom) => {
+  if (
+    nextRoom
+    && previousRoom
+    && nextRoom.revision < previousRoom.revision
+  ) {
+    // An HTTP action response can arrive after a newer WebSocket snapshot.
+    room.value = previousRoom
+  }
 })
 
 watch(
@@ -1126,57 +1144,6 @@ async function leaveCurrentRoom() {
   }
 }
 
-async function syncRoom() {
-  if (
-    isSyncing.value
-    || !validCode.value
-    || document.visibilityState === 'hidden'
-  ) {
-    return
-  }
-
-  isSyncing.value = true
-
-  try {
-    const previousRound = room.value?.activeRound
-    const updatedRoom = await $fetch<Room>(`/api/rooms/${roomCode.value}`, {
-      query: viewerId.value ? { playerId: viewerId.value } : {}
-    })
-    room.value = updatedRoom
-
-    const nextRound = updatedRoom.activeRound
-    const nextSong = nextRound?.song
-
-    if (
-      previousRound?.id !== nextRound?.id
-      || previousRound?.phase !== nextRound?.phase
-      || previousRound?.song?.youtubeId !== nextSong?.youtubeId
-      || previousRound?.song?.startTime !== nextSong?.startTime
-    ) {
-      logPlaybackEvent(
-        `SYNC changed prev=${previousRound?.id ?? '-'}/${previousRound?.song?.youtubeId ?? '-'}/${previousRound?.phase ?? '-'} next=${nextRound?.id ?? '-'}/${nextSong?.youtubeId ?? '-'}/${nextRound?.phase ?? '-'}`
-      )
-    }
-  } catch {
-    // A transient polling error should not replace the current view.
-  } finally {
-    isSyncing.value = false
-  }
-}
-
-let syncTimer: ReturnType<typeof setInterval> | null = null
-
-onMounted(() => {
-  syncTimer = setInterval(syncRoom, 3000)
-})
-
-onBeforeUnmount(() => {
-  if (syncTimer) {
-    clearInterval(syncTimer)
-    syncTimer = null
-  }
-})
-
 const pageTitle = computed(() => {
   return room.value
     ? t('room.pageTitle', { code: room.value.code })
@@ -1250,6 +1217,13 @@ useSeoMeta({
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5">
+            <UBadge
+              :label="isRoomSocketConnected ? t('room.live') : t('room.reconnecting')"
+              :icon="isRoomSocketConnected ? 'i-lucide-radio' : 'i-lucide-wifi-off'"
+              :color="isRoomSocketConnected ? 'success' : 'warning'"
+              variant="subtle"
+              size="lg"
+            />
             <UBadge
               :label="room.code"
               icon="i-lucide-key-round"

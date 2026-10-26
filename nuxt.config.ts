@@ -52,6 +52,12 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2026-06-30',
 
+  nitro: {
+    experimental: {
+      websocket: true
+    }
+  },
+
   vite: {
     optimizeDeps: {
       include: ['jsqr', 'qrcode.vue']

@@ -118,6 +118,8 @@ export interface Room {
   code: string
   hostName: string
   createdAt: string
+  /** Monotonic revision incremented on every persisted mutation. */
+  revision: number
   status: RoomStatus
   settings: RoomSettings
   players: RoomPlayer[]

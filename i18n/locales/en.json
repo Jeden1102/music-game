@@ -82,6 +82,8 @@
     "demo": "Open the playback demo",
     "backHome": "Back to home",
     "loading": "Loading room…",
+    "live": "Live",
+    "reconnecting": "Reconnecting…",
     "pageTitle": "Room {code} · musicline",
     "lobbyBadge": "Waiting room",
     "lobbyTitle": "Gather the crew",

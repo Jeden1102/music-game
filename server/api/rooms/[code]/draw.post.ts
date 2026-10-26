@@ -1,4 +1,5 @@
 import { drawRound, getRoom, getUsedSongIdsForHost } from '../../../utils/room-store'
+import { broadcastRoom } from '../../../utils/room-socket'
 import { findPlayableSong, toRoundSong } from '../../../utils/game-songs'
 import { throwRoomActionError } from '../../../utils/room-action-error'
 
@@ -6,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const code = getRouterParam(event, 'code') ?? ''
   const body = await readBody<{ playerId?: string } | null>(event)
   const playerId = typeof body?.playerId === 'string' ? body.playerId : ''
-  const room = getRoom(code)
+  const room = await getRoom(code)
 
   if (!room) {
     throw createError({
@@ -16,7 +17,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const usedSongIds = getUsedSongIdsForHost(code, playerId)
+  const usedSongIds = await getUsedSongIdsForHost(code, playerId)
 
   if (!usedSongIds) {
     throwRoomActionError('NOT_HOST')
@@ -40,11 +41,12 @@ export default defineEventHandler(async (event) => {
     throwRoomActionError('NO_SONG')
   }
 
-  const result = drawRound(code, playerId, [toRoundSong(song)])
+  const result = await drawRound(code, playerId, [toRoundSong(song)])
 
   if (!result.ok) {
     throwRoomActionError(result.reason)
   }
 
+  await broadcastRoom(code)
   return result.room
 })

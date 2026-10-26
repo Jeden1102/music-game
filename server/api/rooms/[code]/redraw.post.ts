@@ -1,4 +1,5 @@
 import { getRoom, getUsedSongIdsForHost, redrawRound } from '../../../utils/room-store'
+import { broadcastRoom } from '../../../utils/room-socket'
 import { findPlayableSong, toRoundSong } from '../../../utils/game-songs'
 import {
   invalidateSongYouTubeVideo,
@@ -16,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const code = getRouterParam(event, 'code') ?? ''
   const body = await readBody<RedrawBody | null>(event)
   const playerId = typeof body?.playerId === 'string' ? body.playerId : ''
-  const room = getRoom(code, playerId)
+  const room = await getRoom(code, playerId)
 
   if (!room) {
     throw createError({
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const usedSongIds = getUsedSongIdsForHost(code, playerId)
+  const usedSongIds = await getUsedSongIdsForHost(code, playerId)
 
   if (!usedSongIds) {
     throwRoomActionError('NOT_HOST')
@@ -63,11 +64,12 @@ export default defineEventHandler(async (event) => {
     throwRoomActionError('NO_SONG')
   }
 
-  const result = redrawRound(code, playerId, [toRoundSong(song)])
+  const result = await redrawRound(code, playerId, [toRoundSong(song)])
 
   if (!result.ok) {
     throwRoomActionError(result.reason)
   }
 
+  await broadcastRoom(code)
   return result.room
 })

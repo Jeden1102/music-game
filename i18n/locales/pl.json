@@ -82,6 +82,8 @@
     "demo": "Otwórz demo odtwarzania",
     "backHome": "Wróć na start",
     "loading": "Ładowanie pokoju…",
+    "live": "Na żywo",
+    "reconnecting": "Łączenie…",
     "pageTitle": "Pokój {code} · musicline",
     "lobbyBadge": "Poczekalnia",
     "lobbyTitle": "Zbierz ekipę",

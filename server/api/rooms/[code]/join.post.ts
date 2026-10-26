@@ -1,6 +1,7 @@
 import type { JoinRoomInput } from '#shared/types/room'
 import { isValidPlayerName, normalizePlayerName } from '#shared/utils/player'
 import { joinRoom } from '../../../utils/room-store'
+import { broadcastRoom } from '../../../utils/room-socket'
 
 export default defineEventHandler(async (event) => {
   const code = getRouterParam(event, 'code') ?? ''
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const result = joinRoom(code, name)
+  const result = await joinRoom(code, name)
 
   if (!result.ok) {
     throw createError({
@@ -27,5 +28,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  await broadcastRoom(code)
   return result.membership
 })

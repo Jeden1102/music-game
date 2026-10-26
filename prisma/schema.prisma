@@ -34,3 +34,176 @@ model Song {
   @@index([categoryId])
   @@index([lastPlayed])
 }
+
+/// Durable state of a game room. Gameplay is no longer kept in process memory.
+model Room {
+  code            String   @id
+  hostId          String
+  hostName        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  expiresAt       DateTime
+  revision        Int      @default(0)
+  status          String
+  clipSeconds     Int
+  categoryId      Int?
+  categoryName    String?
+  targetCards     Int
+  currentPlayerId String?
+  winnerId        String?
+  activeRoundId   String?
+
+  players   RoomPlayer[]
+  usedSongs RoomUsedSong[]
+  rounds    RoomRound[]
+
+  @@index([expiresAt])
+}
+
+model RoomPlayer {
+  id       String          @id
+  roomCode String
+  name     String
+  isHost   Boolean         @default(false)
+  joinedAt DateTime
+  seat     Int
+  tokens   Int             @default(0)
+  room     Room            @relation(fields: [roomCode], references: [code], onDelete: Cascade)
+  timeline TimelineEntry[]
+
+  @@unique([roomCode, seat])
+  @@index([roomCode])
+}
+
+model TimelineEntry {
+  id           String     @id @default(cuid())
+  playerId     String
+  position     Int
+  songId       Int
+  title        String
+  artist       String
+  releaseYear  Int
+  categoryName String
+  addedAt      DateTime
+  player       RoomPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, position])
+}
+
+/// Every drawn song is retained so redraws and future rounds cannot reuse it.
+model RoomUsedSong {
+  roomCode String
+  songId   Int
+  usedAt   DateTime @default(now())
+  room     Room     @relation(fields: [roomCode], references: [code], onDelete: Cascade)
+
+  @@id([roomCode, songId])
+}
+
+/// Round history plus the currently active round (`Room.activeRoundId`).
+model RoomRound {
+  id                   String    @id
+  roomCode             String
+  phase                String
+  playerId             String
+  startedAt            DateTime
+  clipEndedAt          DateTime?
+  revealedAt           DateTime?
+  scoredAt             DateTime?
+  placementPosition    Int?
+  placementSubmittedAt DateTime?
+  placementCorrect     Boolean?
+  songId               Int
+  songTitle            String
+  songArtist           String
+  songReleaseYear      Int
+  songYoutubeId        String
+  songStartTime        Int
+  songCategoryName     String
+  createdAt            DateTime  @default(now())
+  room                 Room      @relation(fields: [roomCode], references: [code], onDelete: Cascade)
+
+  claims          RoomRoundClaim[]
+  tokenAwards     RoomRoundTokenAward[]
+  tokenPlacements RoomRoundTokenPlacement[]
+  tokenDuels      RoomRoundTokenDuel[]
+  tokenResults    RoomRoundTokenResult[]
+
+  @@index([roomCode, startedAt])
+}
+
+model RoomRoundClaim {
+  roundId   String
+  playerId  String
+  createdAt DateTime  @default(now())
+  round     RoomRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@id([roundId, playerId])
+}
+
+model RoomRoundTokenAward {
+  roundId   String
+  playerId  String
+  createdAt DateTime  @default(now())
+  round     RoomRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@id([roundId, playerId])
+}
+
+model RoomRoundTokenPlacement {
+  id        String    @id @default(cuid())
+  roundId   String
+  playerId  String
+  position  Int
+  sequence  Int       @default(0)
+  placedAt  DateTime
+  yearGuess Int?
+  round     RoomRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, playerId])
+  @@index([roundId, position])
+  @@index([roundId, sequence])
+}
+
+model RoomRoundTokenDuel {
+  id        String                    @id @default(cuid())
+  roundId   String
+  position  Int
+  sequence  Int                       @default(0)
+  winnerId  String
+  cardWon   Boolean
+  createdAt DateTime                  @default(now())
+  round     RoomRound                 @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  guesses   RoomRoundTokenDuelGuess[]
+
+  @@unique([roundId, position])
+  @@index([roundId, sequence])
+}
+
+model RoomRoundTokenDuelGuess {
+  duelId    String
+  playerId  String
+  year      Int
+  sequence  Int                @default(0)
+  createdAt DateTime           @default(now())
+  duel      RoomRoundTokenDuel @relation(fields: [duelId], references: [id], onDelete: Cascade)
+
+  @@id([duelId, playerId])
+  @@index([duelId, sequence])
+}
+
+model RoomRoundTokenResult {
+  roundId   String
+  playerId  String
+  position  Int
+  sequence  Int       @default(0)
+  cardWon   Boolean
+  tokenWon  Boolean
+  duel      Boolean
+  createdAt DateTime  @default(now())
+  round     RoomRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@id([roundId, playerId])
+  @@index([roundId, position])
+  @@index([roundId, sequence])
+}

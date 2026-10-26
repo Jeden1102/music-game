@@ -1,15 +1,17 @@
 import { revealRound } from '../../../utils/room-store'
+import { broadcastRoom } from '../../../utils/room-socket'
 import { throwRoomActionError } from '../../../utils/room-action-error'
 
 export default defineEventHandler(async (event) => {
   const code = getRouterParam(event, 'code') ?? ''
   const body = await readBody<{ playerId?: string } | null>(event)
   const playerId = typeof body?.playerId === 'string' ? body.playerId : ''
-  const result = revealRound(code, playerId)
+  const result = await revealRound(code, playerId)
 
   if (!result.ok) {
     throwRoomActionError(result.reason)
   }
 
+  await broadcastRoom(code)
   return result.room
 })

@@ -1,4 +1,5 @@
 import { getRoom, startRoom } from '../../../utils/room-store'
+import { broadcastRoom } from '../../../utils/room-socket'
 import { listSongs, shuffle, toTimelineCard } from '../../../utils/game-songs'
 import { throwRoomActionError } from '../../../utils/room-action-error'
 
@@ -6,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const code = getRouterParam(event, 'code') ?? ''
   const body = await readBody<{ playerId?: string } | null>(event)
   const playerId = typeof body?.playerId === 'string' ? body.playerId : ''
-  const room = getRoom(code)
+  const room = await getRoom(code)
 
   if (!room) {
     throw createError({
@@ -30,11 +31,12 @@ export default defineEventHandler(async (event) => {
   const startingCards = room.players.map((_, index) => {
     return toTimelineCard(shuffledSongs[index % shuffledSongs.length]!)
   })
-  const result = startRoom(code, playerId, startingCards)
+  const result = await startRoom(code, playerId, startingCards)
 
   if (!result.ok) {
     throwRoomActionError(result.reason)
   }
 
+  await broadcastRoom(code)
   return result.room
 })

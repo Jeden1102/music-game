@@ -100,7 +100,9 @@ Import obsługuje backend: `POST /api/admin/songs/import` z nagłówkiem `x-admi
 - Pokój tworzy host; pozostali dołączają 4-cyfrowym kodem lub kodem QR.
 - QR hosta koduje adres `/join?code=XXXX`, więc po zeskanowaniu kod jest od razu wypełniony.
 - Nick i członkostwo w pokoju są zapisywane w cookies (`musicline_session`, `musicline_name`), a język w `musicline_locale`.
-- Aktywne pokoje są trzymane **w pamięci serwera** (maks. 8 graczy, ważność 12 godzin). Restart serwera czyści pokoje — to celowe uproszczenie obecnego etapu.
+- Aktywne pokoje, gracze, osie czasu, rundy, żetony i pojedynki są zapisywane **w bazie danych** (maks. 8 graczy, ważność 12 godzin). Restart serwera nie czyści rozgrywki.
+- Każda akcja gry jest natychmiast rozsyłana przez WebSocket (`/ws`) do wszystkich uczestników pokoju. Klient nie odpytuje serwera w pętli — po utracie połączenia automatycznie się łączy i pobiera świeży stan.
+- Snapshot wysyłany przez WebSocket jest personalizowany: tylko host widzi piosenkę w fazie `listening`, a cudze typy lat pozostają ukryte do odsłonięcia rundy.
 - Skaner QR wymaga kamery i bezpiecznego kontekstu (`https://` lub `localhost`). Na telefonie przez LAN może być potrzebny HTTPS/tunel; kod można zawsze wpisać ręcznie.
 - Aby otworzyć aplikację z telefonu w sieci lokalnej, uruchom `pnpm dev --host` i wejdź na adres IP komputera.
 
@@ -197,13 +199,15 @@ server/
 │  ├─ rooms/                     # create, get, join
 │  ├─ admin/                     # verify, import
 │  └─ songs/random.get.ts        # losowanie
-└─ utils/                        # room-store, song-import, youtube-availability, youtube-resolver, admin
+├─ routes/
+│  └─ ws.ts                      # WebSocket pokoju (broadcast stanu)
+└─ utils/                        # room-store (Prisma), room-socket, song-import, youtube-availability, youtube-resolver, admin
 shared/
 ├─ types/                        # Room, SongImport
 └─ utils/                        # player, room code
 lib/prisma.ts                    # singleton PrismaClient
 prisma/
-├─ schema.prisma                 # Category i Song
+├─ schema.prisma                 # utwory, pokoje, gracze, rundy i żetony
 └─ seed.ts                       # przykładowe utwory
 ```
 
