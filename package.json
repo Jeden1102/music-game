@@ -1,0 +1,42 @@
+{
+  "name": "musicline",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "prisma generate && nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.145",
+    "@iconify-json/simple-icons": "^1.2.100",
+    "@nuxt/image": "2.2.0",
+    "@nuxt/ui": "^4.12.0",
+    "@nuxtjs/i18n": "^10.6.0",
+    "@prisma/client": "^5.22.0",
+    "jsqr": "^1.4.0",
+    "nuxt": "^4.6.2",
+    "prisma": "^5.22.0",
+    "qrcode.vue": "^3.11.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.17.0",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.13.0",
+    "eslint-plugin-better-tailwindcss": "^4.9.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vue-tsc": "^3.3.13"
+  },
+  "packageManager": "pnpm@12.14.0"
+}

@@ -1,0 +1,36 @@
+// MySQL by default. For an offline demo switch to SQLite
+// (provider = "sqlite" and DATABASE_URL="file:./dev.db").
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  songs Song[]
+}
+
+model Song {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  artist             String
+  releaseYear        Int
+  /// Empty until the first playback resolves an embeddable YouTube video.
+  youtubeId          String?   @unique
+  /// When the current youtubeId was last verified against the YouTube API.
+  youtubeVerifiedAt  DateTime?
+  /// Comma-separated IDs rejected by the IFrame player, to avoid retry loops.
+  youtubeRejectedIds String?
+  startTime          Int       @default(0)
+  lastPlayed         DateTime?
+  categoryId         Int
+  category           Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([lastPlayed])
+}
